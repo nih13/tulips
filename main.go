@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"io"
 	"log"
@@ -13,13 +14,12 @@ import (
 	//"github.com/jinzhu/gorm"
 	//_ "github.com/jinzhu/gorm/dialects/postgres"
 	_ "github.com/joho/godotenv/autoload"
+	_ "github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 )
 
 //	Database connection
-var db *gorm.DB
+//var db *gorm.DB
 var redisClient *redis.Client
 
 //structure
@@ -33,13 +33,26 @@ type User struct {
 
 func init() {
 	// Connect to PostgreSQL
-	dsn := "host=localhost user=postgres password=postgres dbname=postgres port=5432 sslmode=disable TimeZone=Asia/Shanghai"
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	// dsn := "host=localhost user=postgres password=postgres dbname=postgres port=5432 sslmode=disable TimeZone=Asia/Shanghai"
+	// db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	// if err != nil {
+	// 	panic("failed to connect database")
+	// }
+	connStr := "host=localhost user=postgres password=postgres dbname=postgres port=5432 sslmode=disable TimeZone=Asia/Shanghai"
+	db, err := sql.Open("postgres", connStr)
 	if err != nil {
-		panic("failed to connect database")
+		log.Fatal(err)
+	} else {
+		fmt.Println("db connected")
 	}
 
-	db.AutoMigrate(&User{})
+	sqlStatement := `INSERT INTO users (username, email, password)VALUES ($1, $2, $3)`
+	_, err = db.Exec(sqlStatement, "akash", "akash@gmail.com", "random")
+	if err != nil {
+		panic(err)
+	}
+
+	//db.AutoMigrate(&User{})
 	//db.AutoMigrate(&User{}) // Migrate the User model
 
 	// Connect to Redis
